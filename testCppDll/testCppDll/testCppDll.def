@@ -1,0 +1,5 @@
+LIBRARY     "testCppDll"
+EXPORTS
+Add @ 1
+Multiply @ 2
+AddMultiply @ 3
