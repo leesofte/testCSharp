@@ -5,7 +5,7 @@ using System.Text;
 using WcfServiceCommon;
 using System.ServiceModel;
 using testWCFService.Interface;
-using testUseDll.Complex;
+using testUseDllByCSharp;
 
 namespace WcfSvcTest
 {

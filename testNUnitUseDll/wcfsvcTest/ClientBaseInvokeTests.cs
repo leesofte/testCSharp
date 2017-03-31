@@ -6,7 +6,7 @@ using System.Text;
 using WcfServiceCommon;
 using System.Threading;
 using System.Reflection;
-using testUseDll.Complex;
+using testUseDllByCSharp;
 using testWCFService.Interface;
 
 namespace WcfSvcTest

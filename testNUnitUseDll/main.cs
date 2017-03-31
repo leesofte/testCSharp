@@ -25,10 +25,9 @@ using HANDLE = System.IntPtr;
  * 
  ***********************************************************************
  */
-using testUseDll.Complex;
-using testAppDomain;
+using testUseDllByCSharp;
 
-namespace testUseDll
+namespace testNUnitUseDll
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     [Serializable]
@@ -44,23 +43,8 @@ namespace testUseDll
             set;
         }      
     }
-    public enum EventFlags
+    public class TestNUnitUseDll
     {
-        PULSE = 1,
-        RESET = 2,
-        SET = 3
-    }
-    public class TestUseDll
-    {
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern IntPtr CreateEvent(IntPtr lpEventAttributes, bool bManualReset, bool bInitialState, string lpName);
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern IntPtr OpenEvent(bool dwDesiredAccess, bool bInheritHandle, string lpName);
-        //OpenEventW 
-
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool SetEvent(HANDLE hEvent, int dEvent);
-
         delegate double Add(double a, double b);
         delegate bool InitFunc(string resourcePath);
         delegate bool CreateNameEntitysByType(string text,
@@ -68,6 +52,7 @@ namespace testUseDll
                                              ref uint arraySize,
                                              int type);
         delegate bool CreateNameEntityByType(out IntPtr namePtr, int type);
+
         const string WCF_EVENT_NAME = "Global\\WCF";
         const string WCF_SEM_NAME = "Global\\WCF_SEM";
 
@@ -96,7 +81,7 @@ namespace testUseDll
         {
             Console.WriteLine("Complex:Use DllLoadLibrary, ");
             PrintCurrentProcessMemUsage();
-            IntPtr hModule = UseComplexDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             int error = Marshal.GetLastWin32Error();
             //NameEntityType type = NameEntityType.OrganizationName;
             int type = 0;
@@ -137,8 +122,7 @@ namespace testUseDll
                 }
 
             }
-            UseComplexDllByLoadLibrary.FreeLibrary(hModule);
-            //ClearMemory();
+            Win32.FreeLibrary(hModule);
             PrintCurrentProcessMemUsage();
             Console.WriteLine("Complex: Test END\n");
         }
@@ -157,7 +141,7 @@ namespace testUseDll
         static void TestSimpleDllLoadLibrary()
         {
             Console.WriteLine("Simple:Use DllLoadLibrary,");
-            IntPtr hModule = UseDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             int error = Marshal.GetLastWin32Error();
             if (hModule == IntPtr.Zero) return;
             unsafe
@@ -166,7 +150,7 @@ namespace testUseDll
                 error = Marshal.GetLastWin32Error();
                 Console.WriteLine(addFunction(1.0, 2.0));
             }
-            UseDllByLoadLibrary.FreeLibrary(hModule);
+            Win32.FreeLibrary(hModule);
             Console.WriteLine("Simple:Test END\n");
         }
 
@@ -241,7 +225,6 @@ namespace testUseDll
                 PerformanceCounter pf2 = new PerformanceCounter("Process", "Working Set", ps.ProcessName);
                 Console.WriteLine("{0}:{1}  {2:N}MB", ps.ProcessName, "工作集(进程类)", ps.WorkingSet64 / 1024/1024);
                 Console.WriteLine("{0}:{1}  {2:N}MB", ps.ProcessName, "工作集        ", pf2.NextValue() / 1024 / 1024);
-                //私有工作集
                 Console.WriteLine("{0}:{1}  {2:N}MB", ps.ProcessName, "私有工作集    ", pf1.NextValue() / 1024 / 1024);
             }
         }
@@ -259,7 +242,7 @@ namespace testUseDll
 
                 object[] Parameters = new object[] { structPtr };
                 //appdomain use SetData And GetData
-                domainLoader.InvokeMethod("testUseDll.Complex.UseComplexDllByLoadLibrary", "TestComplexDllLoadLibraryByParam", Parameters);
+                domainLoader.InvokeMethod("testUseDllByCSharp.UseComplexDllByLoadLibrary", "TestComplexDllLoadLibraryByParam", Parameters);
                 NameEntity nameEntity = domainLoader.appDomain.GetData("createNameEntity") as NameEntity;
                 
                 //review param 
@@ -278,18 +261,19 @@ namespace testUseDll
 
         static void TestComplexDllByProcess()
         {
-            /*
+
+            ShareMemory sm = new ShareMemory();
+            sm.initRead();
+            sm.initWrite();
+            
             //Create a new process info structure.
             ProcessStartInfo pInfo = new ProcessStartInfo();
             //Set the file name member of the process info structure.
             pInfo.FileName = "testLeakConsoleExe.exe";
             //Start the process.
             Process p = Process.Start(pInfo);
-            */
+            
             NameEntity nameEntity = new NameEntity();
-            ShareMemory sm = new ShareMemory();
-            sm.initRead();
-            sm.initWrite();
             nameEntity._type = NameEntityType.OrganizationName;
             // ShareMemory.WriteToMemory((uint)Marshal.SizeOf(nameEntity), nameEntity, "Global\\ShareMemory");
             Message msg = new Message();
@@ -303,13 +287,13 @@ namespace testUseDll
 
         static void TestComplexDllByWCF()
         {
-            /*
+            
             //Create a new process info structure.
             ProcessStartInfo pInfo = new ProcessStartInfo();
             //Set the file name member of the process info structure.
             pInfo.FileName = "WcfServiceHost.exe";
             //Start the process.
-            Process p = Process.Start(pInfo);*/
+            Process p = Process.Start(pInfo);
             //HANDLE m_hEvent = OpenEvent(true, false, WCF_EVENT_NAME);
             Console.WriteLine("begin StandardSynchronousTests");
             PrintCurrentProcessMemUsage();
@@ -325,42 +309,30 @@ namespace testUseDll
         [STAThread]
         static void Main(string[] args)
         {
-            TestComplexDllByWCF();
+            //TestComplexDllByWCF();
 
             //test Unload AppDomain
-            TestUnloadDllBySecondAppDomain();
+            //TestUnloadDllBySecondAppDomain();
 
             //test memUsage
-            TestComplexDllMemUsage();
+            //TestComplexDllMemUsage();
 
             //test Complex dll static
-            TestComplexDllStatic();
+            //TestComplexDllStatic();
 
             //test complex dll by loadlibrary
-            TestComplexDllLoadLibrary();
+            //TestComplexDllLoadLibrary();
 
             //test complex dll by process,by mem mapping
-            //TestComplexDllByProcess();
+            TestComplexDllByProcess();
 
             //test SimpleDll by Static and Loadlibrary
             //TestSimpleDllStatic();
             //TestSimpleDllLoadLibrary();
 
             //test complex dll by reflection
-            TestComplexDllReflection();
+            //TestComplexDllReflection();
             Console.Read();
-
-            /*
-            ProcessStartInfo pInfo = new ProcessStartInfo();
-            //Set the file name member of the process info structure.
-            pInfo.FileName = "testLeakConsoleExe.exe";
-            //Start the process.
-            Process p = Process.Start(pInfo);
-
-            //Wait for the process to end.
-            p.WaitForExit(3000);
-            */
-
             //use to test wndproc for process communication
             //Application.EnableVisualStyles();
             //Application.SetCompatibleTextRenderingDefault(false);

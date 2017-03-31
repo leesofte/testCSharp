@@ -4,22 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using NUnit.Framework;
-using testUseDll;
+using testUseDllByCSharp;
 
-namespace testUseDll.Complex
+namespace testNUnitUseDll
 {
     [TestFixture]
     public class UseComplexDllTest
     {
-        public delegate bool InitFunc(string resourcePath);
-        public delegate bool FindNames(string text, 
+        private delegate bool InitFunc(string resourcePath);
+        private delegate bool FindNames(string text, 
                                 out IntPtr nameArray,
                                 out uint arraySize);
 
         [Test]
-        public void TestLoadLibrary()
+        public void TestComplexLoadLibrary()
         {
-            IntPtr hModule = UseDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             int error = Marshal.GetLastWin32Error();
             //Console.WriteLine("The Last Win32 Error was: " + error);
             if (hModule == IntPtr.Zero) return;
@@ -49,20 +49,22 @@ namespace testUseDll.Complex
                     Assert.AreNotEqual(arrayPtr, IntPtr.Zero);
                     Marshal.FreeCoTaskMem(arrayPtr);
                 }
-
             }
+            Win32.FreeLibrary(hModule);
         }
 
         [Test]
-        public void TestStatic()
+        public void TestComplexDllImport()
         {
             NameEntityType allType = NameEntityType.OrganizationName | NameEntityType.PersonName | NameEntityType.PlaceName;
             UseComplexDllByStatic nameFinder = new UseComplexDllByStatic(allType);
             
+            //param is not didn't use
             bool isInit = nameFinder.Initialize(@".\data");
             if (isInit)
             {
                 List<NameEntity> nameResults = new List<NameEntity>();
+                //param text is not didn't use
                 string text = "";
                 bool isSuccess = nameFinder.CreateNameEntitys(text, ref nameResults);
                 Assert.AreEqual(isSuccess, true);

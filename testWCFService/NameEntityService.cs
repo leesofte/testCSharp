@@ -5,15 +5,15 @@ using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Text;
 using System.Runtime.InteropServices;
-using testUseDll.Complex;
 using testWCFService.Interface;
+using testUseDllByCSharp;
 
 namespace testWCFService
 {
     [ServiceBehavior(InstanceContextMode = InstanceContextMode.PerCall,UseSynchronizationContext = false)]
     public class NameEntityService : INameEntityService, IDisposable
     {
-        delegate bool CreateNameEntityByTypeDelegate(out IntPtr namePtr, int type);
+        private delegate bool CreateNameEntityByTypeDelegate(out IntPtr namePtr, int type);
         //private IntPtr hModule = IntPtr.Zero;
 
         public NameEntityService()
@@ -22,7 +22,7 @@ namespace testWCFService
         }
         public void Dispose()
         {
-            Console.WriteLine("xxxxxxxxxx");
+
         }
 
         ~NameEntityService()
@@ -33,7 +33,7 @@ namespace testWCFService
         public bool CreateNameEntityByType(int value, IntPtr namePtr)
         {
             int type = 0;
-            IntPtr hModule = UseComplexDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             CreateNameEntityByTypeDelegate createNameEntity = (CreateNameEntityByTypeDelegate)UseComplexDllByLoadLibrary.GetFunctionAddress(hModule, "CreateNameEntityByType", typeof(CreateNameEntityByTypeDelegate));
             //IntPtr namePtr = IntPtr.Zero;
             if (createNameEntity(out namePtr, type))
@@ -44,14 +44,14 @@ namespace testWCFService
                 Console.WriteLine("非托管函数返回的结构体数据：double = {0:f6}, int = {1}",
                     retStruct._score, retStruct._highlightLength);
             }
-            UseComplexDllByLoadLibrary.FreeLibrary(hModule);
+            Win32.FreeLibrary(hModule);
             return true;
         }
 
         public bool CreateNameEntityByTypeByParam(int value, ref NameEntity nameEntity)
         {
             int type = 0;
-            IntPtr hModule = UseComplexDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             CreateNameEntityByTypeDelegate createNameEntity = (CreateNameEntityByTypeDelegate)UseComplexDllByLoadLibrary.GetFunctionAddress(hModule, "CreateNameEntityByType", typeof(CreateNameEntityByTypeDelegate));
             IntPtr namePtr = IntPtr.Zero;
             if (createNameEntity(out namePtr, type))
@@ -62,7 +62,7 @@ namespace testWCFService
                 Console.WriteLine("非托管函数返回的结构体数据：double = {0:f6}, int = {1}",
                     nameEntity._score, nameEntity._highlightLength);
             }
-            UseComplexDllByLoadLibrary.FreeLibrary(hModule);
+            Win32.FreeLibrary(hModule);
             return true;
         }
 

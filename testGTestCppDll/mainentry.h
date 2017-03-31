@@ -7,4 +7,10 @@
 #pragma comment (lib, "..\\gtest\\lib\\gtest.lib")
 #endif
 
+/*
+TEST_CreateNameEntity()
+{
+
+}*/
+
 #endif

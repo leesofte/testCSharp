@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace testUseDll
+namespace testUseDllByCSharp
 {
     public class UseSimpleDllByStatic
     {

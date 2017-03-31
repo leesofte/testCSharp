@@ -13,11 +13,11 @@ public:
 	bool OnReadInit(int size);
 	bool OnInit();
 	bool OnWriteMemory(IN void* pszData,int size);  
-	bool OnReadMemory(OUT void* pszData,int size);  		
-
+	bool OnReadMemoryFirstStage(OUT void* pszData,int size);  		
+	bool OnReadMemorySecondStage(OUT void* pszData,int size);  
 private:
 	HANDLE m_hWriteEvent;  
-	HANDLE m_hReadEvent;
+	HANDLE m_hReadEvent[2];
 	HANDLE m_hWriteHandle;  
 	HANDLE m_hReadHandle;
 };  

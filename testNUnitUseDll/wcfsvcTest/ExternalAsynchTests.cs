@@ -6,7 +6,7 @@ using System.Threading;
 using testWCFService.Interface;
 using WcfServiceCommon;
 using System.Runtime.Remoting.Messaging;
-using testUseDll.Complex;
+using testUseDllByCSharp;
 
 namespace WcfSvcTest
 {

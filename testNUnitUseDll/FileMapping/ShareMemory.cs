@@ -5,11 +5,14 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.IO.MemoryMappedFiles;
 using System.IO;
-using testUseDll.Complex;
 using System.Data;
 using System.ComponentModel;
-using HANDLE = System.IntPtr;  
-namespace testUseDll
+using testUseDllByCSharp;
+using System.Threading;
+using HANDLE = System.IntPtr;
+using ThreadMessaging;
+
+namespace testNUnitUseDll
 {
     public struct SECURITY_ATTRIBUTES
     {
@@ -19,73 +22,27 @@ namespace testUseDll
     }
     public class ShareMemory
     {
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern IntPtr CreateEvent(IntPtr lpEventAttributes, bool bManualReset, bool bInitialState, string lpName);
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern IntPtr OpenEvent(bool dwDesiredAccess, bool bInheritHandle, string lpName);
-        //OpenEventW 
-        
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool SetEvent(HANDLE hEvent, int dEvent);
-        [DllImport("kernel32", EntryPoint = "WaitForSingleObject", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern int WaitForSingleObject(HANDLE hHandle, int dwMilliseconds);
-        public enum EventFlags
-        {
-            PULSE = 1,
-            RESET = 2,
-            SET = 3
-        }
         private static bool SetEventAPI(HANDLE hEvent)
         {
-            return SetEvent(hEvent, (int)EventFlags.SET);
+            return Win32.SetEvent(hEvent, (int)EventFlags.SET);
         }
         private static bool PulseEvent(HANDLE hEvent)
         {
-            return SetEvent(hEvent, (int)EventFlags.PULSE);
+            return Win32.SetEvent(hEvent, (int)EventFlags.PULSE);
         }
         private static bool ResetEvent(HANDLE hEvent)
         {
-            return SetEvent(hEvent, (int)EventFlags.RESET);
+            return Win32.SetEvent(hEvent, (int)EventFlags.RESET);
         }
-        /*
-        public int initRead(uint structSize, string fileName)
-        {
-            IntPtr hShareMemoryHandle = IntPtr.Zero;
-            IntPtr hVoid = IntPtr.Zero;
-
-            //判断参数的合法性  
-            if (structSize > 0 && fileName.Length > 0)
-            {
-                hShareMemoryHandle = CreateFileMapping(INVALID_HANDLE_VALUE, IntPtr.Zero, (uint)PAGE_READONLY, 0, (uint)structSize, GLOBAL_MEMORY_OUT_NAME);
-                if (hShareMemoryHandle == IntPtr.Zero)
-                {
-                    return -2;
-                }
-                else
-                {
-                    if (ERROR_ALREADY_EXISTS == GetLastError())
-                    {
-                        return -3;
-                    }
-                }
-                hVoid = MapViewOfFile(hShareMemoryHandle, FILE_MAP_READ, 0, 0, structSize);
-                if (hVoid == IntPtr.Zero)
-                {
-                    CloseHandle(hShareMemoryHandle);
-                    return -4;
-                }
-            }
-            m_hReadEvent = CreateEvent(IntPtr.Zero, false, false, GLOBAL_EVENT_OUT_NAME);
-            return 0;
-        }
-        */
         public int initRead()
         {
+            m_hReadEvent = new Semaphore(0, 1, GLOBAL_EVENT_OUT_NAME);//new ProcessSemaphore(GLOBAL_EVENT_OUT_NAME, 0, 1);
             IntPtr hMappingHandle = IntPtr.Zero;
             IntPtr hVoid = IntPtr.Zero;
-            m_hReadEvent = OpenEvent(true, false, GLOBAL_EVENT_OUT_NAME);
-            uint i = GetLastError();
-            hMappingHandle = OpenFileMapping((uint)FILE_MAP_READ, false, GLOBAL_MEMORY_OUT_NAME);
+            uint i = Win32.GetLastError();
+            NameEntity nameEntity = new NameEntity();
+
+            hMappingHandle = Win32.CreateFileMapping(INVALID_HANDLE_VALUE, IntPtr.Zero, (uint)PAGE_READWRITE, 0, (uint)Marshal.SizeOf(nameEntity), GLOBAL_MEMORY_OUT_NAME);
             if (hMappingHandle == IntPtr.Zero)
             {
                 return 1;
@@ -96,13 +53,14 @@ namespace testUseDll
         {
             IntPtr hMappingHandle = IntPtr.Zero;
             IntPtr hVoid = IntPtr.Zero;
-
-            hMappingHandle = OpenFileMapping((uint)FILE_MAP_WRITE, false, GLOBAL_MEMORY_IN_NAME);
+            m_hWriteEvent[0] = new Semaphore(0, 1, GLOBAL_EVENT_IN1_NAME);
+            m_hWriteEvent[1] = new Semaphore(0, 1, GLOBAL_EVENT_IN2_NAME);
+            NameEntity nameEntity = new NameEntity();
+            hMappingHandle = Win32.CreateFileMapping(INVALID_HANDLE_VALUE, IntPtr.Zero, (uint)PAGE_READWRITE, 0, (uint)Marshal.SizeOf(nameEntity), GLOBAL_MEMORY_IN_NAME);
             if (hMappingHandle == IntPtr.Zero)
             {
                 return 1;
             }
-            m_hWriteEvent = OpenEvent(true, false, GLOBAL_EVENT_IN_NAME);
             return 0;
         }
 
@@ -118,12 +76,12 @@ namespace testUseDll
             IntPtr hMappingHandle = IntPtr.Zero;
             IntPtr hVoid = IntPtr.Zero;
 
-            hMappingHandle = OpenFileMapping((uint)FILE_MAP_READ, false, GLOBAL_MEMORY_OUT_NAME);
+            hMappingHandle = Win32.OpenFileMapping((uint)FILE_MAP_READ, false, GLOBAL_MEMORY_OUT_NAME);
             if (hMappingHandle == IntPtr.Zero)
             {
                 return null;
             }
-            hVoid = MapViewOfFile(hMappingHandle, FILE_MAP_READ, 0, 0, structSize);
+            hVoid = Win32.MapViewOfFile(hMappingHandle, FILE_MAP_READ, 0, 0, structSize);
             if (hVoid == IntPtr.Zero)
             {
                 return null;
@@ -135,12 +93,12 @@ namespace testUseDll
 
             if (hVoid != IntPtr.Zero)
             {
-                UnmapViewOfFile(hVoid);
+                Win32.UnmapViewOfFile(hVoid);
                 hVoid = IntPtr.Zero;
             }
             if (hMappingHandle != IntPtr.Zero)
             {
-                CloseHandle(hMappingHandle);
+                Win32.CloseHandle(hMappingHandle);
                 hMappingHandle = IntPtr.Zero;
             }
             return bytes;
@@ -154,35 +112,39 @@ namespace testUseDll
         /// <returns>返回读到的映射对象</returns>  
         public Object ReadFromMemoryToObj(uint structSize, Type type)
         {
-            WaitForSingleObject(m_hReadEvent, System.Threading.Timeout.Infinite); 
+            m_hReadEvent.WaitOne();
             IntPtr hMappingHandle = IntPtr.Zero;
             IntPtr hVoid = IntPtr.Zero;
 
-            hMappingHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, false, GLOBAL_MEMORY_OUT_NAME);
+            hMappingHandle = Win32.OpenFileMapping(FILE_MAP_ALL_ACCESS, false, GLOBAL_MEMORY_OUT_NAME);
             if (hMappingHandle == IntPtr.Zero)
             {
                 return null;
             }
-            hVoid = MapViewOfFile(hMappingHandle, FILE_MAP_READ, 0, 0, structSize);
+            hVoid = Win32.MapViewOfFile(hMappingHandle, FILE_MAP_READ, 0, 0, structSize);
             if (hVoid == IntPtr.Zero)
             {
                 return null;
             }
-
-            Object obj = Marshal.PtrToStructure(hVoid, type);
-            /*
+            object obj = null;
+            unsafe
+            {
+                //obj = Marshal.PtrToStructure(hVoid, type);  
+            }            
+            
             if (hVoid != IntPtr.Zero)
             {
-                UnmapViewOfFile(hVoid);
+                Win32.UnmapViewOfFile(hVoid);
                 hVoid = IntPtr.Zero;
             }
             if (hMappingHandle != IntPtr.Zero)
             {
-                CloseHandle(hMappingHandle);
+                Win32.CloseHandle(hMappingHandle);
                 hMappingHandle = IntPtr.Zero;
             }
-             * */
-            ResetEvent(m_hReadEvent);
+
+            m_hReadEvent.Release();
+            m_hWriteEvent[1].Release();
             return obj;
         }
 
@@ -202,22 +164,22 @@ namespace testUseDll
             //判断参数的合法性  
             if (structSize > 0)
             {
-                hShareMemoryHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, false, GLOBAL_MEMORY_IN_NAME);
+                hShareMemoryHandle = Win32.OpenFileMapping(FILE_MAP_ALL_ACCESS, false, GLOBAL_MEMORY_IN_NAME);
                 if (hShareMemoryHandle == IntPtr.Zero)
                 {
                     return -2;
                 }
                 else
                 {
-                    if (ERROR_ALREADY_EXISTS == GetLastError())
+                    if (ERROR_ALREADY_EXISTS == Win32.GetLastError())
                     {
                         return -3;
                     }
                 }
-                hVoid = MapViewOfFile(hShareMemoryHandle, FILE_MAP_WRITE, 0, 0, structSize);
+                hVoid = Win32.MapViewOfFile(hShareMemoryHandle, FILE_MAP_WRITE, 0, 0, structSize);
                 if (hVoid == IntPtr.Zero)
                 {
-                    CloseHandle(hShareMemoryHandle);
+                    Win32.CloseHandle(hShareMemoryHandle);
                     return -4;
                 }
                 Marshal.StructureToPtr(obj, hVoid, false);
@@ -226,58 +188,8 @@ namespace testUseDll
             {
                 return -1;
             }
-            SetEventAPI(m_hWriteEvent);
+            m_hWriteEvent[0].Release();
             return 0;
-
-            /*
-            IntPtr hShareMemoryHandle = IntPtr.Zero;
-            IntPtr hVoid = IntPtr.Zero;
-
-            //判断参数的合法性  
-            if (structSize > 0 && fileName.Length > 0)
-            {
-                hShareMemoryHandle = CreateFileMapping(INVALID_HANDLE_VALUE, IntPtr.Zero, (uint)PAGE_READWRITE, 0, (uint)structSize, fileName);
-                if (hShareMemoryHandle == IntPtr.Zero)
-                {
-                    return -2;
-                }
-                else
-                {
-                    if (ERROR_ALREADY_EXISTS == GetLastError())
-                    {
-                        return -3;
-                    }
-                }
-                hVoid = MapViewOfFile(hShareMemoryHandle, FILE_MAP_WRITE, 0, 0, structSize);
-                if (hVoid == IntPtr.Zero)
-                {
-                    CloseHandle(hShareMemoryHandle);
-                    return -4;
-                }
-                Marshal.StructureToPtr(obj, hVoid, false);
-                //发送消息，通知接收  
-                /*
-                IntPtr handle = FindWindow(null, windowName.Trim());
-                if (handle == IntPtr.Zero)
-                {
-                    return -5;
-                }
-                else
-                {
-                    if (PostMessage(handle, (uint)Msg, 0, 0))
-                    {
-
-                    }
-                }
-                
-            }
-            else
-            {
-                return -1;
-            }
-            SetEvent(m_hWriteEvent);
-            return 0;
-            */
         }
 
         /// 写共享内存  
@@ -296,57 +208,22 @@ namespace testUseDll
             //判断参数的合法性  
             if (structSize > 0)
             {
-                hShareMemoryHandle = OpenFileMapping(FILE_MAP_ALL_ACCESS, false, GLOBAL_MEMORY_IN_NAME);
+                hShareMemoryHandle = Win32.OpenFileMapping(FILE_MAP_ALL_ACCESS, false, GLOBAL_MEMORY_IN_NAME);
                 if (hShareMemoryHandle == IntPtr.Zero)
                 {
                     return -2;
                 }
                 else
                 {
-                    if (ERROR_ALREADY_EXISTS == GetLastError())
+                    if (ERROR_ALREADY_EXISTS == Win32.GetLastError())
                     {
                         return -3;
                     }
                 }
-                hVoid = MapViewOfFile(hShareMemoryHandle, FILE_MAP_WRITE, 0, 0, structSize);
-                
-                /*if (hVoid == IntPtr.Zero)
-                {
-                    CloseHandle(hShareMemoryHandle);
-                    return -4;
-                }
-                 * */
-                Marshal.StructureToPtr(obj, hVoid, false);
-            }
-            else
-            {
-                return -1;
-            }
-            SetEventAPI(m_hWriteEvent);
-            return 0;
-            /*
-            IntPtr hShareMemoryHandle = IntPtr.Zero;
-            IntPtr hVoid = IntPtr.Zero;
-
-            //判断参数的合法性  
-            if (structSize > 0 && fileName.Length > 0)
-            {
-                hShareMemoryHandle = CreateFileMapping(INVALID_HANDLE_VALUE, IntPtr.Zero, (uint)PAGE_READWRITE, 0, (uint)structSize, fileName);
-                if (hShareMemoryHandle == IntPtr.Zero)
-                {
-                    return -2;
-                }
-                else
-                {
-                    if (ERROR_ALREADY_EXISTS == GetLastError())
-                    {
-                        return -3;
-                    }
-                }
-                hVoid = MapViewOfFile(hShareMemoryHandle, FILE_MAP_WRITE, 0, 0, structSize);
+                hVoid = Win32.MapViewOfFile(hShareMemoryHandle, FILE_MAP_WRITE, 0, 0, structSize);
                 if (hVoid == IntPtr.Zero)
                 {
-                    CloseHandle(hShareMemoryHandle);
+                    Win32.CloseHandle(hShareMemoryHandle);
                     return -4;
                 }
                 Marshal.StructureToPtr(obj, hVoid, false);
@@ -355,36 +232,11 @@ namespace testUseDll
             {
                 return -1;
             }
-            return 0;
-             * */
+            m_hWriteEvent[0].Release();
+            return 0;       
         }
 
-        //创建文件映射  
-        [DllImport("kernel32.dll", EntryPoint = "CreateFileMapping", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern IntPtr CreateFileMapping(int hFile, IntPtr lpAttribute, uint flProtected, uint dwMaximumSizeHigh, uint dwMaximumSizeLow, string lpName);
-        //打开文件映射对象  
-        [DllImport("kernel32.dll", EntryPoint = "OpenFileMapping", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr OpenFileMapping(uint dwDesiredAccess, bool bInheritHandle, String lpName);
-        //把文件数据映射到进程的地址空间  
-        [DllImport("Kernel32.dll")]
-        private static extern IntPtr MapViewOfFile(IntPtr hFileMappingObject, uint dwDesiredAccess, uint dwFileOffsetHigh, uint dwFileOffsetLow, uint dwNumberOfBytesToMap);
-        //从调用线程的地址空间释放文件数据映像  
-        [DllImport("Kernel32.dll", EntryPoint = "UnmapViewOfFile", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
-        //关闭一个已经打开的文件句柄  
-        [DllImport("kernel32.dll", EntryPoint = "CloseHandle", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern bool CloseHandle(IntPtr hHandle);
-        //获取最后一个错误信息  
-        [DllImport("kernel32.dll", EntryPoint = "GetLastError", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern uint GetLastError();
-
-        //发送消息需要函数  
-        [DllImport("User32.dll", EntryPoint = "FindWindow", CharSet = CharSet.Unicode)]
-        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-
-        [DllImport("User32.dll", EntryPoint = "PostMessage", CharSet = CharSet.Unicode)]
-        public static extern bool PostMessage(IntPtr hWnd, uint Msg, uint wParam, uint lParam);
-        //  
+ 
         const int ERROR_ALREADY_EXISTS = 183;
         //OpenFileMapping和MapViewOf函数中，使用的文件访问权限  
         const int FILE_MAP_COPY = 0x0001;
@@ -403,10 +255,11 @@ namespace testUseDll
 
         const string GLOBAL_MEMORY_IN_NAME = "ShareMemoryIN";
         const string GLOBAL_MEMORY_OUT_NAME = "ShareMemoryOUT";
-        const string GLOBAL_EVENT_IN_NAME = "ShareMemoryEventIN";
-        const string GLOBAL_EVENT_OUT_NAME = "ShareMemoryEventOUT"; 
+        const string GLOBAL_EVENT_IN1_NAME = "ShareMemoryEventIN1";
+        const string GLOBAL_EVENT_IN2_NAME = "ShareMemoryEventIN2";
+        const string GLOBAL_EVENT_OUT_NAME = "ShareMemoryEventOUT";
 
-        private HANDLE m_hReadEvent = IntPtr.Zero;
-        private HANDLE m_hWriteEvent = IntPtr.Zero;
+        private Semaphore m_hReadEvent = null;
+        private Semaphore[] m_hWriteEvent = {null,null};
     }
 }

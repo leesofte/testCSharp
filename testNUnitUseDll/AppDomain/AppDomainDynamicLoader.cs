@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Threading;
 
-namespace testAppDomain
+namespace testNUnitUseDll
 {
     public class AppDomainDynamicLoader : IDisposable
     {
@@ -51,7 +51,6 @@ namespace testAppDomain
             {
                 AppDomain.Unload(this.appDomain);
                 this.appDomain = null;
-
             }
             catch (CannotUnloadAppDomainException ex)
             {

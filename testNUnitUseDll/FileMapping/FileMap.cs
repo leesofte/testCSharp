@@ -1,13 +1,10 @@
-﻿namespace NAT
+﻿namespace testNUnitUseDll
 {
     namespace INFRA
     {
         using System;
         using System.IO;
         using System.Runtime.InteropServices;
-
-
-
 
         //
         // Win32MapApis
@@ -129,8 +126,6 @@
             }
         }
 
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -157,7 +152,7 @@
         ///   a view of a memory mapped file.
         /// </remarks>
         //
-        public class MapViewStream : Stream//, IDisposable
+        public class MapViewStream : Stream, IDisposable
         {
             MapProtection m_protection = MapProtection.PageNone;
             //base address of our buffer
@@ -180,11 +175,6 @@
             }
 
             ~MapViewStream()
-            {
-                this.Close();
-            }
-
-            public void Dispose()
             {
                 this.Close();
                 GC.SuppressFinalize(this);

@@ -48,12 +48,14 @@ LRESULT CALLBACK MsgWndProc(HWND hwnd,	UINT uMsg,	WPARAM wParam,	LPARAM lParam)
 	case WM_COPYDATA:
 		{
 		HWND hMsgDst =(HWND) FindWindow(0, _T("testNUnitUseDll"));  
-		TestSendMessage(hMsgDst,hwnd);
-		_tprintf(_T("xxxxxxxxxxxxxxx,%d",hMsgDst));
 		memcpy(lpData,pCopyDataStruct->lpData,pCopyDataStruct->cbData);
 		memset((LPBYTE)lpData+pCopyDataStruct->cbData,0,2);//Ä©Î²¸³Öµ¿Õ×Ö·û
 
 		_tprintf(_T("pCopyDataStruct->dwData = %d\npCopyDataStruct->lpData = %s\n"),pCopyDataStruct->dwData,lpData);
+		if(true/*test pCopyDataStruct->lpData is invoke"*/)
+		{
+			TestSendMessage(hMsgDst,hwnd);
+		}
 		break;
 		}
 	default:

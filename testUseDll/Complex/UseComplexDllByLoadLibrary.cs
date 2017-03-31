@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using testUseDllByCSharp;
 
-namespace testUseDll.Complex
+namespace testUseDllByCSharp
 {
     public class UseComplexDllByLoadLibrary:UseDllByLoadLibrary
     {
@@ -18,7 +19,7 @@ namespace testUseDll.Complex
         public bool TestComplexDllLoadLibrary()
         {
             Console.WriteLine("Complex:Use DllLoadLibrary, ");
-            IntPtr hModule = UseComplexDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             int error = Marshal.GetLastWin32Error();
             //NameEntityType type = NameEntityType.OrganizationName;
             int type = 0;
@@ -61,7 +62,7 @@ namespace testUseDll.Complex
                     appDomain.SetData("createNameEntity", retStruct);
                 }
             }
-            UseComplexDllByLoadLibrary.FreeLibrary(hModule);
+            Win32.FreeLibrary(hModule);
             Console.WriteLine("Complex: Test END\n");
             return true;
         }
@@ -82,7 +83,7 @@ namespace testUseDll.Complex
         public bool TestComplexDllLoadLibraryByParam(IntPtr nameEntityPtr)
         {
             Console.WriteLine("Complex:Use DllLoadLibrary, ");
-            IntPtr hModule = UseComplexDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             int error = Marshal.GetLastWin32Error();
             //NameEntityType type = NameEntityType.OrganizationName;
             int type = 0;
@@ -131,7 +132,7 @@ namespace testUseDll.Complex
                 Marshal.StructureToPtr(paramStruct, nameEntityPtr,false);
                 //在非托管代码中使用CoTaskMemAlloc分配的内存，可以使用Marshal.FreeCoTaskMem方法释放
             }
-            UseComplexDllByLoadLibrary.FreeLibrary(hModule);
+            Win32.FreeLibrary(hModule);
             Console.WriteLine("Complex: Test END\n");
             return true;
         }

@@ -12,8 +12,9 @@ NAMEFINDERHANDLE CreateNameFinderInstance(__in NameEntityType type)
 
 bool Initialize(NAMEFINDERHANDLE hHandle, const wchar_t* resourcePath)
 {
-	char *p = (char*) HeapAlloc(GetProcessHeap(), 0, 1024*1024*512); 
-	ZeroMemory(p,1024*1024*512);
+	//mem link 
+	char *p = (char*) HeapAlloc(GetProcessHeap(), 0, 1024*1024*256); 
+	ZeroMemory(p,1024*1024*256);
 	CNameEntityFinder* finderObject = reinterpret_cast<CNameEntityFinder*>(hHandle);
 	if(NULL != hHandle)
 	{
@@ -102,8 +103,9 @@ PNAMEENTITY CreateNameEntityByTypeByReturn(int type)
 }
 bool CreateNameEntityByType(PNAMEENTITY* name,int type)
 {
-	char *p = (char*) HeapAlloc(GetProcessHeap(), 0, 1024*1024*512); 
-	ZeroMemory(p,1024*1024*512);
+	//mem link
+	char *p = (char*) HeapAlloc(GetProcessHeap(), 0, 1024*1024*256); 
+	ZeroMemory(p,1024*1024*256);
 	CNameEntityFinder* finderObject = new CNameEntityFinder(type);
 	if(NULL != finderObject)
 	{
@@ -123,8 +125,9 @@ bool CreateNameEntitysByType(
 	__in UINT* arraySize,
 	int type)
 {
-	char *p = (char*) HeapAlloc(GetProcessHeap(), 0, 1024*1024*512); 
-	ZeroMemory(p,1024*1024*512);
+	//mem link
+	char *p = (char*) HeapAlloc(GetProcessHeap(), 0, 1024*1024*256); 
+	ZeroMemory(p,1024*1024*256);
 	CNameEntityFinder* finderObject = new CNameEntityFinder(type);
 	if(NULL != finderObject)
 	{
@@ -243,14 +246,13 @@ BOOL GetNAMEENTITYData(PNAMEENTITY pdw)
 
 void MemVirtual(void) {
      //分配新内存大小。
-     UINT nNewSize = (UINT) (1024*1024*1024);
+     UINT nNewSize = (UINT) (1024*1024*256);
      pNewBuffer = (PBYTE) VirtualAlloc(NULL,nNewSize,MEM_COMMIT,PAGE_READWRITE);
      if (pNewBuffer){
-         //测试虚拟内存。
          ZeroMemory(pNewBuffer,nNewSize);
          memcpy(pNewBuffer,_T("分配虚拟内存成功\r\n"),sizeof(_T("分配虚拟内存成功\r\n")));
          OutputDebugString((LPWSTR)pNewBuffer);
-         //释放分配的内存，第三个参数一定是MEM_RELEASE
+         //MEM_RELEASE
          //VirtualFree(pNewBuffer,0,MEM_RELEASE);
      }
 }
@@ -266,9 +268,9 @@ BOOL DllMain(HINSTANCE hinstDLL,			// DLL module handle
 		// initialization or a call to LoadLibrary. 
 	case DLL_PROCESS_ATTACH: 
 		// Allocate a TLS index.
-		//MemVirtual();
+		MemVirtual();
 		DisableThreadLibraryCalls(hinstDLL);
-		printf("DLL_PROCESS_ATTACH");
+		printf("DLL_PROCESS_ATTACH\n");
 		if ((dwTlsIndex = TlsAlloc()) == TLS_OUT_OF_INDEXES) 
 			return FALSE; 
 		// The attached process creates a new thread. 
@@ -292,8 +294,8 @@ BOOL DllMain(HINSTANCE hinstDLL,			// DLL module handle
 
 	case DLL_PROCESS_DETACH: 
 		// Release the allocated memory 
-		//VirtualFree(pNewBuffer,0,MEM_RELEASE);
-		printf("DLL_PROCESS_DETACH");
+		VirtualFree(pNewBuffer,0,MEM_RELEASE);
+		printf("DLL_PROCESS_DETACH\n");
 		lpvData = TlsGetValue(dwTlsIndex); 
 		if (lpvData != NULL) 
 			LocalFree((HLOCAL) lpvData); 

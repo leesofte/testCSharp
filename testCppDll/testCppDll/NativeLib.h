@@ -18,7 +18,6 @@
 
 using namespace std;
 
-// ×ÛºÏÊ¾Àý
 DECLARE_HANDLE(NAMEFINDERHANDLE);
 //used to test TLS 
 DWORD dwTlsIndex; 

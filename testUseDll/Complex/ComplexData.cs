@@ -5,7 +5,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 
-namespace testUseDll.Complex
+namespace testUseDllByCSharp
 {
     [FlagsAttribute]
     [Serializable]    
@@ -21,10 +21,6 @@ namespace testUseDll.Complex
     [DataContract]
     public class NameEntity
     {
-        public NameEntity()
-        {
-
-        }
         public string _name
         {
             get;

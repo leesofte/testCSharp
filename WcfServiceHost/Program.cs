@@ -15,18 +15,7 @@ namespace WcfServiceHost
 	{
         const string WCF_EVENT_NAME = "Global\\WCF";
         const string WCF_SEM_NAME = "Global\\WCF_SEM";
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern IntPtr OpenEvent(bool dwDesiredAccess, bool bInheritHandle, string lpName);
-        //OpenEventW 
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern IntPtr CreateEvent(IntPtr lpEventAttributes, bool bManualReset, bool bInitialState, string lpName);
-        
-        [DllImport("kernel32", SetLastError = true, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
-        public static extern bool SetEvent(HANDLE hEvent, int dEvent);
-        [DllImport("kernel32", EntryPoint = "WaitForSingleObject", SetLastError = true, CharSet = CharSet.Unicode)]
-        public static extern int WaitForSingleObject(HANDLE hHandle, int dwMilliseconds);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool CloseHandle(IntPtr hobject);
+
         public enum EventFlags
         {
             PULSE = 1,

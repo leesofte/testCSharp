@@ -7,22 +7,20 @@ using NUnit.Framework;
 
 /************************************************************************
  * Initial version for C# invoke C++ lib                                
- * 1, by dynamic load dll using LoadLibrary 
- * 2, by static load dll
- * 3, by dynamic load dll using LoadLibrary and by reflection(later finish)
+ * 1, By LoadLibrary 
+ * 2, By dllimport 
+ * 3, By LoadLibrary and Reflection
+ * 4, By New AppDomain and LoadLibrary 
+ * 5, By New Process(Common) to invoke C++
+ * 6, By New Process(WCF) to invoke C++
  * 
- * to-do list;
- * 1, dll(library), not .def 
- * 2, input and output param be struct or other Complex dataType
- * 3, loadlibrary and reflection 
- * 4, Test Framework 
  * by lpw 20170317
  * 
  ***********************************************************************
  */
-using testUseDll;
+using testUseDllByCSharp;
 
-namespace testUseDll.Simple
+namespace testNUnitUseDll
 {
     [TestFixture]
     public class UseSimpleDllTest
@@ -34,21 +32,21 @@ namespace testUseDll.Simple
         [SetUp]
         public void Setup()
         {
-            IntPtr hModule = UseDllByLoadLibrary.LoadLibrary("testCppDll.dll");
+            IntPtr hModule = Win32.LoadLibrary("testCppDll.dll");
             int error = Marshal.GetLastWin32Error();
             //Console.WriteLine("The Last Win32 Error was: " + error);
             if (hModule == IntPtr.Zero) return;
-            addFunction = (Add)UseDllByLoadLibrary.GetFunctionAddress(hModule, "Add", typeof(Add));
+            addFunction = (Add)UseComplexDllByLoadLibrary.GetFunctionAddress(hModule, "Add", typeof(Add));
         }
 
         [TearDown]
         public void TearDown()
         {
-            UseDllByLoadLibrary.FreeLibrary(hModule);
+            Win32.FreeLibrary(hModule);
         }
 
         [Test]
-        public void TestLoadLibrary()
+        public void TestSimpleLoadLibrary()
         {
             unsafe
             {
@@ -59,12 +57,13 @@ namespace testUseDll.Simple
         }
 
         [Test]
-        public void TestStatic() 
+        public void TestSimpleDllImport() 
         {
             unsafe 
             {
                 double ret = UseSimpleDllByStatic.Add(1.0, 2.0);
                 Console.WriteLine(ret);
+                Assert.AreEqual(3.0, ret);
             }
             //Console.Read();   
         }

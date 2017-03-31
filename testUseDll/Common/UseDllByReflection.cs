@@ -6,30 +6,16 @@ using System.Runtime.InteropServices;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace testUseDll
+namespace testUseDllByCSharp
 {
-    public enum ModePass
-    {
-        ByValue = 0x0001,
-        ByRef = 0x0002
-    }
     public class UseDllByReflection
     {
-        [DllImport("kernel32.dll", EntryPoint = "LoadLibrary", SetLastError = true)]
-        static extern IntPtr LoadLibrary(string lpFileName);
-
-        [DllImport("kernel32.dll", EntryPoint = "GetProcAddress", SetLastError = true)]
-        static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
-
-        [DllImport("kernel32", EntryPoint = "FreeLibrary", SetLastError = true)]
-        static extern bool FreeLibrary(IntPtr hModule);
-
         private IntPtr hModule = IntPtr.Zero;
         private IntPtr farProc = IntPtr.Zero;
 
         public void LoadDll(string lpFileName)
         {
-            hModule = LoadLibrary(lpFileName);
+            hModule = Win32.LoadLibrary(lpFileName);
             if (hModule == IntPtr.Zero)
             {
                 throw (new Exception(""));
@@ -49,7 +35,7 @@ namespace testUseDll
             {
                 throw (new Exception(""));
             }
-            farProc = GetProcAddress(hModule, lpProcName);
+            farProc = Win32.GetProcAddress(hModule, lpProcName);
             if (farProc == IntPtr.Zero)
             {
                 throw (new Exception(""));
@@ -57,12 +43,12 @@ namespace testUseDll
         }
         public void LoadFun(string lpFileName, string lpProcName)
         {
-            hModule = LoadLibrary(lpFileName);
+            hModule = Win32.LoadLibrary(lpFileName);
             if (hModule == IntPtr.Zero)
             {
                 throw (new Exception(""));
             }
-            farProc = GetProcAddress(hModule, lpFileName);
+            farProc = Win32.GetProcAddress(hModule, lpFileName);
             if (farProc == IntPtr.Zero)
             {
                 throw (new Exception(""));
@@ -70,7 +56,7 @@ namespace testUseDll
         }
         public void UnLoadDll()
         {
-            FreeLibrary(hModule);
+            Win32.FreeLibrary(hModule);
             hModule = IntPtr.Zero;
             farProc = IntPtr.Zero;
         }
@@ -140,7 +126,7 @@ namespace testUseDll
 
         public static Delegate GetFunctionAddress(IntPtr dllModule, string functionName, Type t)
         {
-            IntPtr address = GetProcAddress(dllModule, functionName);
+            IntPtr address = Win32.GetProcAddress(dllModule, functionName);
             if (address == IntPtr.Zero)
                 return null;
             else

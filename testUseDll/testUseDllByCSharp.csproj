@@ -97,6 +97,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\Win32.cs" />
     <Compile Include="Complex\ComplexData.cs" />
     <Compile Include="Complex\UseComplexDllByLoadLibrary.cs" />
     <Compile Include="Complex\UseComplexDllByStatic.cs" />

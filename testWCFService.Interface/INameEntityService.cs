@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Text;
-using testUseDll.Complex;
+using testUseDllByCSharp;
 using testWCFService.Interface;
 
 namespace testWCFService.Interface

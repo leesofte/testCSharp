@@ -9,13 +9,12 @@ typedef bool (*CreateNameEntityByType)(PNAMEENTITY* nameArray,int type);
 int _tmain(int argc, _TCHAR* argv[])
 {
 	char *p = (char*) HeapAlloc(GetProcessHeap(), 0, 1024*1024*512); 
-	ZeroMemory(p,1024*1024*512);
+	ZeroMemory(p,1024*1024*256);
 	
 	//test MemoryMapReader/Writer
 	//bool ret = CreateNameEntityByMemoryMapLib();
 	
-	//test shareWritememory
-
+	//test sharememory
 	CreateNameEntityServiceByShareMemory();
 
 	//test MessageWindow
@@ -23,9 +22,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	SetConsoleTitle(_T("testLeakConsoleExe"));
 	HWND hMsgWnd = CreateMessageWindow(MsgWndProc);
 	_tprintf(_T("Message Window Handle = %d\n"),hMsgWnd);
-
-	_tprintf(_T("Message Window(HANDLE=%d) Ready to receive Window Message...\n"),hMsgWnd); 
-	
+	_tprintf(_T("Message Window(HANDLE=%d) Ready to receive Window Message...\n"),hMsgWnd);	
 	//HWND hMsgDst = (HWND)1248692;//(HWND) FindWindow(0, _T("testNUnitUseDll"));  
 	//TestSendMessage(hMsgDst,hMsgWnd);
 	while(1)
@@ -87,20 +84,19 @@ bool CreateNameEntityServiceByShareMemory()
 		return false;  
 	}  
 	PMESSAGE msg = new MESSAGE();
-	/*
-	if(!shareMemory.OnReadMemory(msg, sizeof(msg)))
+	
+	if(!shareMemory.OnReadMemoryFirstStage(msg, sizeof(msg)))
 	{
 		printf("Read memory block is error.\n"); 
 	}
-	*/
 	CreateNameEntity(nameEntity);
 	if (!shareMemory.OnWriteMemory(nameEntity,sizeof(nameEntity)))  
 	{  
 		printf("write memory block is error.\n");  
 	}
-	while(1)
+	if(!shareMemory.OnReadMemorySecondStage(msg, sizeof(msg)))
 	{
-		;
+		printf("Read memory block is error.\n"); 
 	}
 	return true;
 }

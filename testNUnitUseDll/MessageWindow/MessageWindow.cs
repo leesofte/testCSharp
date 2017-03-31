@@ -5,9 +5,9 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.IO;
-using testUseDll.Complex;
+using testUseDllByCSharp;
 
-namespace testUseDll
+namespace testNUnitUseDll
 {
     public class MessageWindow:Form
     {
@@ -76,7 +76,6 @@ namespace testUseDll
             {
                 // 接收 CopyData 消息，读取发送过来的数据
                 case WM_COPYDATA:
-                    Console.WriteLine("xxxxxxxxxxxx");
                     COPYDATASTRUCT cds = new COPYDATASTRUCT();
                     Type mytype = cds.GetType();
                     cds = (COPYDATASTRUCT)m.GetLParam(mytype);
@@ -106,9 +105,9 @@ namespace testUseDll
             // 
             this.button1.Location = new System.Drawing.Point(48, 94);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
+            this.button1.Size = new System.Drawing.Size(137, 23);
             this.button1.TabIndex = 0;
-            this.button1.Text = "button1";
+            this.button1.Text = "invoke dll console app";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
@@ -119,13 +118,13 @@ namespace testUseDll
             this.Name = "MessageWindow";
             this.ResumeLayout(false);
 
-            this.button1.Enabled = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            NameEntity nameEntity = new NameEntity();
-            SendBytes("testLeakConsoleExe", 0, SerializeUtil.Serialize(nameEntity));
+            //NameEntity nameEntity = new NameEntity();
+            string invokeMethod = "createNameEntity";
+            SendBytes("testLeakConsoleExe", 0, SerializeUtil.Serialize(invokeMethod));
         }
     }
 }

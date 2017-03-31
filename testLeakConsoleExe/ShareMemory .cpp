@@ -3,7 +3,10 @@
 
 ShareMemory::ShareMemory()  
 {  
-	m_hReadEvent = NULL;
+	//WaitForMultipleObjects(2,m_hWriteEvent,true,INFINITE);
+	m_hReadEvent[0] = NULL;
+	m_hReadEvent[1] = NULL;
+	m_hWriteEvent = NULL;
 	m_hWriteEvent = NULL;
 	m_hReadHandle = NULL;
 	m_hWriteHandle = NULL;  
@@ -22,14 +25,58 @@ ShareMemory::~ShareMemory()
 	{  
 		CloseHandle(m_hReadHandle);  
 		m_hReadHandle = NULL;  
-		CloseHandle(m_hReadEvent);  
-		m_hReadEvent = NULL;  
+		CloseHandle(m_hReadEvent[0]);  
+		m_hReadEvent[0] = NULL; 
+		CloseHandle(m_hReadEvent[1]);  
+		m_hReadEvent[1] = NULL;  
 	} 
 }  
 
-bool ShareMemory::OnReadMemory(OUT void* pszData,int size)  
-{  
-	WaitForSingleObject(m_hReadEvent, INFINITE);  
+bool ShareMemory::OnReadMemorySecondStage(OUT void* pszData,int size)  
+{
+	WaitForSingleObject(m_hReadEvent[1], INFINITE);  
+	if (NULL == pszData)  
+	{  
+		return false;  
+	}  
+
+	if (NULL == m_hReadHandle)  
+	{  
+		return false;  
+	}  
+
+	void* pBuffer = NULL;  
+
+	pBuffer = (void*)MapViewOfFile(  
+		m_hReadHandle,  
+		FILE_MAP_READ,  
+		0,  
+		0,  
+		size);  
+	if (NULL == pBuffer)  
+	{  
+		return false;  
+	}  
+
+	__try  
+	{  
+		CopyMemory((void*)pszData, pBuffer, sizeof(pBuffer));  
+	}  
+	__except(EXCEPTION_EXECUTE_HANDLER)  
+	{  
+		UnmapViewOfFile(pBuffer);  
+		return false;  
+	}  
+
+	UnmapViewOfFile(pBuffer);  
+
+	ReleaseSemaphore(m_hReadEvent[1],1,NULL);  
+
+	return true;  
+}
+bool ShareMemory::OnReadMemoryFirstStage(OUT void* pszData,int size)  
+{  	
+	WaitForSingleObject(m_hReadEvent[0], INFINITE);  
 
 	if (NULL == pszData)  
 	{  
@@ -66,25 +113,31 @@ bool ShareMemory::OnReadMemory(OUT void* pszData,int size)
 
 	UnmapViewOfFile(pBuffer);  
 
-	PulseEvent(m_hReadEvent);  
+	ReleaseSemaphore(m_hReadEvent[0],1,NULL);  
 
 	return true;  
 }  
 
 bool ShareMemory::OnReadInit(int size)
 {
-	m_hReadEvent = CreateEvent(NULL, FALSE, FALSE, GLOBAL_EVENT_IN_NAME);  
+	m_hReadEvent[0] = OpenSemaphore(SEMAPHORE_ALL_ACCESS, true,  GLOBAL_EVENT_IN1_NAME); 
+	m_hReadEvent[1] = OpenSemaphore(SEMAPHORE_ALL_ACCESS, true,  GLOBAL_EVENT_IN2_NAME); 
 	if (NULL == m_hReadEvent)  
 	{  
 		return false;  
 	}  
+	m_hReadHandle = OpenFileMapping(  
+		FILE_MAP_ALL_ACCESS,  
+		FALSE,  
+		GLOBAL_MEMORY_IN_NAME);
+	/*
 	m_hReadHandle = CreateFileMapping(  
 		INVALID_HANDLE_VALUE,  
 		NULL,  
 		PAGE_READWRITE,  
 		0,  
 		size,  
-		GLOBAL_MEMORY_IN_NAME);  
+		GLOBAL_MEMORY_IN_NAME); */ 
 	if (NULL == m_hReadHandle)  
 	{  
 		return false;  
@@ -96,18 +149,23 @@ bool ShareMemory::OnReadInit(int size)
 
 bool ShareMemory::OnWriteInit(int size)
 {
-	m_hWriteEvent = CreateEvent(NULL, FALSE, FALSE, GLOBAL_EVENT_OUT_NAME);  
+	m_hWriteEvent = OpenSemaphore(SEMAPHORE_ALL_ACCESS, true,  GLOBAL_EVENT_OUT_NAME);  
 	if (NULL == m_hWriteEvent)  
 	{  
 		return false;  
 	}  
+	m_hWriteHandle = OpenFileMapping(  
+		FILE_MAP_ALL_ACCESS,  
+		FALSE,  
+		GLOBAL_MEMORY_OUT_NAME);  
+	/*
 	m_hWriteHandle = CreateFileMapping(  
 		INVALID_HANDLE_VALUE,  
 		NULL,  
 		PAGE_READWRITE,  
 		0,  
 		size,  
-		GLOBAL_MEMORY_OUT_NAME);  
+		GLOBAL_MEMORY_OUT_NAME);  */
 	if (NULL == m_hWriteHandle)  
 	{  
 		return false;  
@@ -163,7 +221,7 @@ bool ShareMemory::OnWriteMemory(IN void* pszData,int size)
 	}  
 
 	UnmapViewOfFile(pBuffer);  
-	SetEvent(m_hWriteEvent);  
+	ReleaseSemaphore(m_hWriteEvent,1,NULL);  
 
 	return true;  
 }  

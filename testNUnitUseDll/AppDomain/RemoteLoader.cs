@@ -7,7 +7,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace testAppDomain
+namespace testNUnitUseDll
 {
     /// <summary>
     /// The Remote loader.
@@ -15,7 +15,7 @@ namespace testAppDomain
     public class RemoteLoader : MarshalByRefObject, IDisposable
     {
 
-        Assembly assembly = null;
+        private Assembly assembly = null;
 
         public void LoadAssembly(string dllpath)
         {
@@ -86,7 +86,6 @@ namespace testAppDomain
                     }
                     else
                     {
-
                         if (methisInfo.GetParameters().Length == 0)
                         {
                             object pgmClass = Activator.CreateInstance(pgmType);

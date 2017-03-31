@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 
-namespace testUseDll.Complex
+namespace testUseDllByCSharp
 {
     public class UseComplexDllByStatic:IDisposable
     {

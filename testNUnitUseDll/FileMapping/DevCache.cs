@@ -8,14 +8,10 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 
-
-namespace NAT
+namespace testNUnitUseDll
 {
     namespace INFRA
     {
-        internal class Win32MapApi
-        {
-        }
         public class DevCache
         {
             private System.Threading.Mutex oMutex = new System.Threading.Mutex(false, "MmfUpdater");
@@ -24,7 +20,6 @@ namespace NAT
             {
 
             }
-
 
             private const string ObjectNamesMMF = "ObjectNamesMMF";
             /// <summary>
@@ -223,8 +218,6 @@ namespace NAT
                     if (System.IO.File.Exists(map.GetMMFDir() + ObjName + ".nat"))
                         System.IO.File.Delete(map.GetMMFDir() + ObjName + ".nat");
                 }
-
-
             }
         }
     }
